@@ -2,7 +2,7 @@
 def dump(data:dict,indent=0) -> str:
     '''代替PyYaml模块中的dump函数，但只实现了将键和值为字符串、字典、列表的字典转化为文本'''
     yaml_str = ""
-    space = "    " * indent  # 缩进量
+    space = "  " * indent  # 缩进量
     
     if isinstance(data, dict):
         for key, value in data.items():
