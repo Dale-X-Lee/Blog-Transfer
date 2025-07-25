@@ -203,7 +203,7 @@ class FileProcessor:
         :return: 生成的标准化文件名
         """
         date_str = datetime.strptime(metadata['time'],"%Y-%m-%d %H:%M:%S").strftime("%Y-%m-%d")
-        title_slug = re.sub(r'\s+', '-', metadata['title']).strip()
+        title_slug = re.sub(r'[\\/:\*\?"<>\|\s]+', '-', metadata['title']).strip()
         return f"{date_str}-{title_slug}.md"
     
 if __name__ == '__main__':
