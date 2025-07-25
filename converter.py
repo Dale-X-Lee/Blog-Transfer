@@ -113,12 +113,12 @@ class MathJax_Converter:
         # 匹配包含换行的块公式结构（兼容引用环境和常规环境）
         block_pattern = re.compile(
             r'''
-            (^[>]*)                # 捕获可能的引用符号(包含多级>)-group 1
+            (^[> ]*)               # 捕获可能的引用符号(包含多级>)-group 1
             \s*                    # 可能的空格
             (\\begin\{equation\*\}|\\\[|\$\$|\$\$\$)  # 开始标记-group 2
             (.*?)                  # 公式内容（非贪婪）-group 3
             (\\end\{equation\*\}|\\\]|\$\$|\$\$\$)    # 结束标记-group 4
-            \s*                    # 可能的空格
+            [^\S\n]*               # 可能的空格（换行除外）
             (                      # 捕获后续可能的换行符
             (?:\n|$)               # 匹配换行或文本结束
             )
@@ -142,8 +142,9 @@ class MathJax_Converter:
                 f"{self.style['math_block_end']}{indent}"
             )
             
-            # 规范化换行符（确保单独成段且无连续空行）
-            return re.sub(r'\n{3,}', '\n\n', new_block) + trailing_newline
+            # # 规范化换行符（确保单独成段且无连续空行）
+            # return re.sub(r'\n{3,}', '\n\n', new_block) + trailing_newline
+            return new_block + trailing_newline
 
         return block_pattern.sub(_replace_block, text)
 
@@ -191,7 +192,7 @@ class MathJax_Converter:
                 if current_group:
                     min_level = min(lev for (_, lev) in current_group)
                     empty_line = "" if min_level == 0 else "> " * min_level
-                    result.append(empty_line)
+                    result.append(empty_line.strip())
                     current_group = []
                 result.append(line)
         
@@ -208,6 +209,16 @@ class MathJax_Converter:
 # 测试用代码
 if __name__ == '__main__':
     c = MathJax_Converter()
-    text = r'''$x^{a_{b}}$'''
+    text = r'''> 那么对每个$d\geqslant 1$，存在一个$[-1,1]$上的Borel测度$\nu$满足
+>
+> $$
+> formula
+> $$
+> aaa
+> > $$
+> > formula-2
+> > $$
+我们的办法是类似的：考虑函数空间$C([-1,1])$（其上范数为$L^{\infty}$-范数）的子空间'''
     s = c.convert(text)
     print(s)
+    # s = c._merge_consecutive_empty_lines(s)
