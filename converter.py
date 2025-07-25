@@ -170,41 +170,39 @@ class MathJax_Converter:
 
     @staticmethod
     def _merge_consecutive_empty_lines(text: str) -> str:
-        """合并连续同类空行，智能保持多重引用层级"""
+        """合并连续空行，保留最浅引用层级"""
         result = []
-        # 状态追踪：前一行是否为同类空行及其层级
-        prev_is_empty = {'type': None, 'level': 0}  # 'type': 'normal'/'block', 'level'为引用深度
+        current_group = []  # 存储连续空行及其层级
 
-        for line in text.split('\n'):
+        def get_level(line: str) -> int:
             stripped = line.strip()
-            
-            # 状态判断（时间复杂度O(1)）
-            current_type = 'text'
-            current_level = 0
-            if not stripped:  # 普通空行
-                current_type = 'normal'
-            elif stripped.startswith('>'):
-                # 精准层级计算（忽略内部空格）
-                clean_line = stripped.replace(' ', '')
-                if all(c == '>' for c in clean_line):  # 纯引用空行
-                    current_type = 'block'
-                    current_level = len(clean_line)
-            
-            # 合并决策逻辑
-            if current_type == 'text':
-                result.append(line)
-                prev_is_empty = {'type': None, 'level': 0}
-            else:
-                # 同类同级空行合并
-                if (prev_is_empty['type'] == current_type and 
-                    prev_is_empty['level'] == current_level):
-                    continue
-                result.append(line)
-                prev_is_empty = {'type': current_type, 'level': current_level}
+            if not stripped:
+                return 0  # 普通空行
+            clean = stripped.replace(" ", "")
+            if all(c == ">" for c in clean):
+                return len(clean)  # 引用空行层级
+            return -1  # 非空行
 
-        # 重建文本并处理跨行合并
-        processed = '\n'.join(result)
-        # 最终合并可能残留的连续空行（不影响层级）
+        for line in text.split("\n"):
+            level = get_level(line)
+            if level >= 0:  # 空行
+                current_group.append((line, level))
+            else:
+                if current_group:
+                    min_level = min(lev for (_, lev) in current_group)
+                    empty_line = "" if min_level == 0 else "> " * min_level
+                    result.append(empty_line)
+                    current_group = []
+                result.append(line)
+        
+        # 处理最后一批连续空行
+        if current_group:
+            min_level = min(lev for (_, lev) in current_group)
+            empty_line = "" if min_level == 0 else ">" * min_level
+            result.append(empty_line)
+        
+        # 合并残留的连续空行
+        processed = "\n".join(result)
         return re.sub(r'(\n{3,})', '\n\n', processed)
 
 # 测试用代码
