@@ -175,6 +175,7 @@ class FileProcessor:
 
         # 解决重名
         counter = 1
+        new_pdf_name = pdf_name
         while dest_path.exists():
             stem, suffix = Path(pdf_name).stem, Path(pdf_name).suffix
             new_pdf_name = f"{stem}_{counter}{suffix}"
