@@ -5,6 +5,7 @@ from pathlib import Path
 
 import converter
 from tools.MyYaml import dump as yaml_dump
+from config import pdf_storage_dir
 
 
 class FileProcessor:
@@ -66,7 +67,7 @@ class FileProcessor:
         if ext == '.md':
             front_matter, body = FileProcessor._handle_markdown(input_path, metadata)
         elif ext == '.pdf':
-            front_matter, body = FileProcessor._handle_pdf(input_path, metadata)
+            front_matter, body = FileProcessor._handle_pdf(input_path, output_dir, metadata)
         else:
             raise ValueError(f"不支持的文件类型：{ext}")
 
@@ -151,21 +152,23 @@ class FileProcessor:
         return yaml_dump(front_matter), body
 
     @staticmethod
-    def _handle_pdf(input_path: str, metadata: dict):
+    def _handle_pdf(input_path: str, output_dir: str, metadata: dict):
         """
         处理PDF文件的内部方法
         
         执行以下操作：
-        1. 复制PDF文件到资源目录（自动解决重名冲突）
+        1. 复制PDF文件到output_dir父级目录的assets/pdf/posts目录（自动解决重名冲突）
         2. 构建重定向用的YAML front matter
         
         :param input_path: PDF文件路径
+        :param output_dir: 输出目录
         :param metadata: 元数据字典
         :return: (front_matter, body)元组
             - front_matter: 生成的YAML格式字符串
             - body: 空字符串（PDF处理不生成正文内容）
         """
-        dest_dir = Path('../assets/pdf/posts').resolve()
+        base_dir = Path(output_dir).parent
+        dest_dir = base_dir / pdf_storage_dir
         dest_dir.mkdir(parents=True, exist_ok=True)
         pdf_name = Path(input_path).name
         dest_path = dest_dir / pdf_name
@@ -174,20 +177,21 @@ class FileProcessor:
         counter = 1
         while dest_path.exists():
             stem, suffix = Path(pdf_name).stem, Path(pdf_name).suffix
-            dest_path = dest_dir / f"{stem}_{counter}{suffix}"
+            new_pdf_name = f"{stem}_{counter}{suffix}"
+            dest_path = dest_dir / new_pdf_name
             counter += 1
 
         shutil.copy2(input_path, dest_path)
 
-        rel_path = os.path.relpath(dest_path, start=Path('../assets').resolve())
-        rel_path = rel_path.replace(os.sep, '/')
-
+        rel_path = r'../'+pdf_storage_dir + r'/' + new_pdf_name
         front_matter = {
             'layout': 'post',
             'title': metadata['title'],
             'date': metadata['time'],
-            'redirect': f"../{rel_path}",
-            'categories': metadata.get('categories', 'Notes')
+            'description': metadata['description'],
+            'tags': metadata.get('tags', []),
+            'categories': metadata.get('categories', 'Notes'),
+            'redirect': f"../{rel_path}"
         }
         return yaml_dump(front_matter), ""
 
