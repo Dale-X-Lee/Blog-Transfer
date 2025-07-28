@@ -175,16 +175,17 @@ class FileProcessor:
 
         # 解决重名
         counter = 1
-        new_pdf_name = pdf_name
         while dest_path.exists():
             stem, suffix = Path(pdf_name).stem, Path(pdf_name).suffix
-            new_pdf_name = f"{stem}_{counter}{suffix}"
-            dest_path = dest_dir / new_pdf_name
+            dest_path = dest_dir / f"{stem}_{counter}{suffix}"
             counter += 1
 
         shutil.copy2(input_path, dest_path)
 
-        rel_path = r'../'+pdf_storage_dir + r'/' + new_pdf_name
+        # 计算相对路径（pdf存储位置相对于output_dir）
+        rel_path = os.path.relpath(dest_path, start=output_dir)
+        rel_path = rel_path.replace(os.sep, '/')
+
         front_matter = {
             'layout': 'post',
             'title': metadata['title'],
