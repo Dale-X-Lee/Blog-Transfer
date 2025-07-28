@@ -193,7 +193,7 @@ class FileProcessor:
             'description': metadata['description'],
             'tags': metadata.get('tags', []),
             'categories': metadata.get('categories', 'Notes'),
-            'redirect': f"../{rel_path}"
+            'redirect': rel_path
         }
         return yaml_dump(front_matter), ""
 
